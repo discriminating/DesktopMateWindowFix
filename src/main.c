@@ -1,18 +1,38 @@
 #include <windows.h>
 
+static DWORD dwAttempts = 30;
+
+BOOLEAN
+WINAPI
+DetermineStartup(
+	VOID
+)
+{
+	return GetTickCount64() < 60000; /* 60 seconds */
+}
+
 VOID
 main(
 	VOID
 )
 {
-	HWND hWnd = FindWindowA(
-		NULL,
-		"DesktopMate"
-	);
+	HWND hWnd = 0;
+
+	while (!hWnd && dwAttempts)
+	{
+		hWnd = FindWindowA(
+			"UnityWndClass",
+			"DesktopMate"
+		);
+
+		Sleep(DetermineStartup() ? 1000 : 400);
+
+		dwAttempts--;
+	}
 
 	if (!hWnd)
 	{
-		MessageBoxA(
+		DetermineStartup() ? "" : MessageBoxA(
 			NULL,
 			"DesktopMate not found",
 			"Error",
@@ -21,11 +41,6 @@ main(
 
 		return;
 	}
-
-	LONG_PTR dwStyle = GetWindowLongPtrA(
-		hWnd,
-		GWL_STYLE
-	);
 
 	/* Create a dummy owner window */
 	HWND hOwner = CreateWindowExA(
@@ -55,7 +70,7 @@ main(
 		return;
 	}
 
-	/* Fix specially for RetroBar */
+	/* Remove from taskbar */
 	SetWindowLongPtr(
 		hWnd,
 		GWLP_HWNDPARENT,
